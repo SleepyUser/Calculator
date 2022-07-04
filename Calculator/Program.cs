@@ -43,7 +43,8 @@ namespace Calculator
                                   "4) Reverse Words\n" +
                                   "5) Is this a Square Number?\n" +
                                   "6) Times Tables\n" +
-                                  "7) Word Joiner");
+                                  "7) Word Joiner\n" +
+                                  "8) Time Calculator");
                 switch (_iChecks.getValidInt())
                 {
                     case 1:
@@ -74,6 +75,9 @@ namespace Calculator
                         Console.WriteLine("Word Joiner Selected...");
                         WordJoinerUI();
                         break;
+                    case 8:
+                        Console.WriteLine("Time Calculator selected...");
+                        throw NotImplementedException;
                     default:
                         throw new Exception("Invalid Menu Option Selected");
                 }
