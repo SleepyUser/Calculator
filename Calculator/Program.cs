@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
+using System.Text;
 using Microsoft.VisualBasic;
 
 namespace Calculator
@@ -77,7 +78,8 @@ namespace Calculator
                         break;
                     case 8:
                         Console.WriteLine("Time Calculator selected...");
-                        throw NotImplementedException;
+                        TimeCalculationUI();
+                        break;
                     default:
                         throw new Exception("Invalid Menu Option Selected");
                 }
@@ -99,6 +101,61 @@ namespace Calculator
             Console.WriteLine("Please enter a valid positive integer:");
             int input = _iChecks.getValidInt(posOnly: true);
             Console.WriteLine("The cumulative sum from 0 to " + input + " is: " + _calcFunc.CumulativeSum(input));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void TimeCalculationUI()
+        {
+            Console.WriteLine("Please enter a date: (DD/MM/YYYY)");
+            DateTime dateIn = _iChecks.getValidDateTime();
+            
+            Console.WriteLine("Would you like to add time to this?");
+            bool add = _iChecks.getYN();
+            
+            Console.WriteLine("Would you like to add days (D), months (M), or years (Y)?");
+            char dateUnit = _iChecks.GetValidChar(new char[] {'D', 'M', 'Y' }, false);
+            
+            Console.WriteLine("How many would you like to "+ (add ? "add?" : "subtract?"));
+            int number = _iChecks.getValidInt(posOnly:true);
+            
+            DateTime dateOut = _calcFunc.TimeCalculator(dateIn, add, dateUnit, number);
+            
+            Console.WriteLine("You entered:" + dateIn.ToString("d") +
+                              "\n and " + (add ? "added " : "subtracted ") + number + " " +
+                              DateUnitConvert(dateUnit, number != 1) +
+                              "\n and the result is: "+ dateOut.ToString("d"));
+        }
+
+        public string DateUnitConvert(char dateUnit, bool plural = false, bool capitalise = false)
+        {
+            StringBuilder output = new StringBuilder();
+            
+            switch (char.ToUpper(dateUnit))
+            {
+                case 'D':
+                    output.Append("day");
+                    break;
+                case 'M':
+                    output.Append("month");
+                    break;
+                case 'Y':
+                    output.Append("year");
+                    break;
+            }
+
+            if (plural)
+            {
+                output.Append("s");
+            }
+
+            if (capitalise)
+            {
+                output[0] = char.ToUpper(output[0]);
+            }
+
+            return output.ToString();
         }
 
         /// <summary>
@@ -299,6 +356,35 @@ namespace Calculator
 
             }
         }
+
+        /// <summary>
+        /// Adds or subtracts a number of days, months, or years, from a given date.
+        /// </summary>
+        /// <param name="dateIn">the starting date</param>
+        /// <param name="add">add or subtract?</param>
+        /// <param name="dateUnit">D, M, or Y, for days, months, and years, respectively</param>
+        /// <param name="number">the number of dateunits to add/subtract</param>
+        /// <returns>the resulting date</returns>
+        /// <exception cref="Exception">If D M or Y is not used as a dateunit</exception>
+        public DateTime TimeCalculator(DateTime dateIn, bool add, char dateUnit, int number)
+        {
+            if (!add)
+            {
+                number = -number;
+            }
+
+            switch (char.ToUpper(dateUnit))
+            {
+                case 'D':
+                    return dateIn.AddDays(number);
+                case 'M':
+                    return dateIn.AddMonths(number);
+                case 'Y':
+                    return dateIn.AddYears(number);
+                default:
+                    throw new Exception("Invalid dateUnit");
+            }
+        }
     }
 
     class InputChecks
@@ -309,20 +395,8 @@ namespace Calculator
             /// <returns>char: either +, -, /, *</returns>
             public char getValidOperator()
             {
-                char[] validOps = { '+', '-', '/', '*' };
-                while (true)
-                {
-                    Console.WriteLine("Please type an operator (*, /, +, -)");
-                    string input = Console.ReadLine() ?? string.Empty;
-                    if (validOps != null && validOps.Contains(Convert.ToChar(input)))
-                    {
-                        return Convert.ToChar(input);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Invalid Input, please try again.");
-                    }
-                }
+                Console.WriteLine("Please type an operator (*, /, +, -)");
+                return GetValidChar(new char[] { '+', '-', '/', '*' }, true);
             }
             
             /// <summary>
@@ -366,6 +440,65 @@ namespace Calculator
                     }
                     Console.WriteLine("Invalid input.");
                 }
+            }
+            
+            /// <summary>
+            /// Asks the user to enter a character and checks it against the parameter list of valid characters
+            /// Users will be asked to repeatedly enter a character until one on the list is entered.
+            /// </summary>
+            /// <param name="validChars">An array of chars considered valid by the check. If Case Sensitive is true,
+            /// Array will be converted to upper case.</param>
+            /// <param name="caseSensitive"> False by default, is the list of valid chars case sensitive?</param>
+            /// <returns></returns>
+            public char GetValidChar(char[] validChars, bool caseSensitive = false)
+            {
+                char input = 'a'; // a used only to initalise
+                if(!caseSensitive) //If not case sensitive, convert all to upper
+                {
+                    for(int i = 0; i < validChars.Length; i++) 
+                    {
+                        validChars[i] = char.ToUpper(validChars[i]);
+                    }
+                }
+                while(true)
+                {
+                    input = GetValidChar();
+                    if (!caseSensitive) //If not case sensitive convert input to upper
+                    {
+                        input = Char.ToUpper(input);
+                    }
+                    if (validChars.Contains(input))
+                    {
+                        return input;
+                    }
+                    Console.WriteLine("Invalid Input, please enter only a valid character.");
+                }
+            }
+
+            public char GetValidChar()
+            {
+                char input = '0';
+                while (!char.TryParse(Console.ReadLine() ?? string.Empty, out input))
+                {
+                    Console.WriteLine("Invalid input, please enter a valid character.");
+                }
+                return input;
+            }
+            
+            /// <summary>
+            /// Asks the user to enter a date or time and returns the parsed datetime.
+            /// Keeps asking if it cannot parse the input
+            /// </summary>
+            /// <returns>The parsed datetime</returns>
+            public DateTime getValidDateTime()
+            {
+                DateTime input = DateTime.Now;
+                while (!DateTime.TryParse(Console.ReadLine() ?? String.Empty, out input))
+                {
+                    Console.WriteLine("Invalid input.");
+                }
+
+                return input;
             }
 
             /// <summary>
